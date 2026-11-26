@@ -119,7 +119,7 @@ process_downloaded_object() {
 if [ $stage -le 0 ]; then
   echo "$0: Start to download WenetSpeech user agreement"
   if [ $modelscope == true ]; then
-    touch TERMS_OF_ACCESS
+    touch $download_dir/TERMS_OF_ACCESS
   else
     wget -c -P $download_dir ${WENETSPEECH_RELEASE_URL}/TERMS_OF_ACCESS || exit 1;
   fi
@@ -158,16 +158,14 @@ fi
 if [ $stage -le 3 ]; then
   echo "$0: Start to process the downloaded files(*.aes.tgz)"
   cp $download_dir/TERMS_OF_ACCESS $untar_dir
-  if [ $modelscope == true ]; then
-    ms_download_dir=$download_dir/modelscope/hub/datasets/downloads/wenet/WenetSpeech/master
-    for tgz in `ls $ms_download_dir | grep -v '\.'`; do
-      process_downloaded_object ${ms_download_dir}/$tgz || exit 1;
-    done || exit 1;
-  else
-    grep -v '^#' metadata/v1.list | (while read md5 tgz; do
-      process_downloaded_object ${download_dir}/$tgz || exit 1;
-    done) || exit 1;
-  fi
+  # Both the release server and "modelscope download --local_dir" lay files
+  # out with the same relative paths as metadata/v1.list, and each tarball
+  # contains paths like audio/train/youtube/B00000 and WenetSpeech.json, so
+  # untarring into $untar_dir yields the layout icefall/lhotse expects:
+  # $untar_dir/{WenetSpeech.json,audio/...}
+  grep -v '^#' metadata/v1.list | (while read md5 tgz; do
+    process_downloaded_object ${download_dir}/$tgz || exit 1;
+  done) || exit 1;
 fi
 
 echo "$0: Done"
