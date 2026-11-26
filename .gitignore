@@ -36,3 +36,5 @@ data
 raw_wav
 tensorboard
 **/*build*
+
+SAFEBOX/

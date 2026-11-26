@@ -8,7 +8,7 @@ set -e
 set -o pipefail
 
 stage=0
-modelscope=false
+modelscope=true
 WENETSPEECH_RELEASE_URL=http://wenet.meeting.tencent.com/WenetSpeech
 
 if [ $# -ne 2 ]; then
@@ -118,8 +118,11 @@ process_downloaded_object() {
 # User agreement
 if [ $stage -le 0 ]; then
   echo "$0: Start to download WenetSpeech user agreement"
-  wget -c -P $download_dir \
-    ${WENETSPEECH_RELEASE_URL}/TERMS_OF_ACCESS || exit 1;
+  if [ $modelscope == true ]; then
+    touch TERMS_OF_ACCESS
+  else
+    wget -c -P $download_dir ${WENETSPEECH_RELEASE_URL}/TERMS_OF_ACCESS || exit 1;
+  fi
   GREEN='\033[0;32m'
   NC='\033[0m'       # No Color
   echo -e "${GREEN}"
@@ -142,7 +145,8 @@ fi
 if [ $stage -le 2 ]; then
   echo "$0: Start to download WenetSpeech files(*.aes.tgz)"
   if [ $modelscope == true ]; then
-    CACHE_HOME=$download_dir python utils/download_from_modelscope.py
+    # CACHE_HOME=$download_dir python utils/download_from_modelscope.py
+    modelscope download --dataset wenet/WenetSpeech --local_dir $download_dir
   else
     grep -v '^#' metadata/v1.list | (while read line; do
       download_object_from_release $line || exit 1;
